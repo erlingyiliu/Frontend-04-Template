@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TicTacToe</title>
+    <style>
+        .cell {
+            width:100px;
+            height:100px;
+            background-color: green;
+            /* 排成一行 */
+            display:inline-block;
+            border: solid 1px white;
+            vertical-align: middle;
+            
+            line-height: 100px;
+            font-size: 50px;
+            text-align:center;
+        }
+    </style>
+</head>
+<body>
+    <div id="board"></div>
+    
+</body>
+<script>
+    let pattern = [
+        [0,2,0],
+        [0,1,0],
+        [0,0,0]
+    ]
+
+    let color = 1;
+
+    // 显示棋子及棋盘
+    function show() {
+        // 获取 board 元素
+        let board = document.getElementById("board");
+        // 每次落子时先清空
+        board.innerHTML = "";
+        // 创建 3*3 表格
+        for(let i= 0; i<3;i++) {
+            for(let j=0; j<3; j++) {
+                let cell = document.createElement("div");
+                // 添加 class
+                cell.classList.add("cell");
+                // 判断显示 ❌ 或 ⭕️
+                cell.innerText = pattern[i][j] == 2? "❌" : pattern[i][j] == 1? "⭕️" : "";
+                // 添加点击事件
+                cell.addEventListener("click", () => move(j,i));
+                board.appendChild(cell);
+            }
+            board.appendChild(document.createElement("br"));
+        }
+    }
+
+    // 添加棋子
+    function move(x,y) {
+        pattern[y][x] = color;
+        if (check(pattern, color)) {
+            alert(color == 2 ? "❌ is winner!" : "⭕️ is winner");
+        }
+        color = 3 - color;
+        show();
+        if (willWin(pattern, color)) {
+            alert(color == 2 ? "❌ will win!" : "⭕️ will win");
+        }
+    }
+
+    // 克隆数组，避免破坏原数组
+    function clone(pattern) {
+        return JSON.parse(JSON.stringify(pattern));
+    }
+    
+    // 判断是否即将胜利
+    function willWin(pattern, color) {
+        for(let i=0; i<3; i++) {
+            for(let j=0; j<3; j++) {
+                if (pattern[i][j]) {
+                    continue
+                }
+            let tmp = clone(pattern);
+                tmp[i][j] = color;
+                if(check(tmp, color)) {
+                    // 把 return true 改造一下，
+                    return [j, i];
+                }
+            }
+        }
+        // return false 可以保留，但从逻辑上 return null，才是最好的选择。
+        return null;
+    }
+    
+    // 判断最好的落子位置
+    // 对方的最差的策略。就是我方最好的选择。 
+    function bestChoice(pattern, color) {
+        let p;
+        // 特例情况，如果马上要赢了，直接返回一个 point。
+        // 之前的代码里并没有返回一个点，所以要把 willWin 在改一下。
+        if (p = willWin(pattern, color)) {
+            return {
+                point: p,
+                result: 1
+            }
+        }
+       
+        let result = -2; // -2 弱于当前的任何一个局面，既是是输也不能比 -2 更差了。
+        let point = null;
+        //
+        for (let i= 0; i<3; i++) {
+            for (let j =0; j<3; j++) {
+                if (pattern[i][j]) {
+                    continue;
+                }
+                let tmp = clone(pattern);
+                tmp [i][j] =color;
+                // 我们将自身落在空点之后，找对方的最差的策略。就是我方最好的选择。
+                let r = bestChoice(tmp, 3-color).result;
+                
+                if (-r >result) {
+                    result = -r;
+                    point = [j, i];
+                }
+            }
+        }
+        
+        // 返回值，如果没有找到 point，那么把 result 设置为 0 就好。
+        return {
+            point: point,
+            result: point? result : 0
+        } 
+    }
+    
+    //  判断那方获胜
+    function check(pattern, color) {
+        // 检查同行是否都相等。
+        for (let i = 0; i<3; i++) {
+            let win = true;
+            for (let j = 0; j < 3; j++) {
+                if (pattern[i][j] !== color) {
+                    win = false;
+                }
+            }
+            if (win) {
+                return true;
+            }
+        }
+        
+        // 检查同列是否都相等。
+        for (let i = 0; i<3; i++) {
+            let win = true;
+            for (let j = 0; j < 3; j++) {
+                if (pattern[j][i] !== color) {
+                    win = false;
+                }
+            }
+            if (win) {
+                return true;
+            }
+        }
+        
+        // 斜向
+        // 斜向1：0,0; 1,1; 2,2 位置都等于当前 color 时
+        {
+            let win = true;
+            for (let j=0; j<3; j++) {
+                if (pattern[j][j] !== color) {
+                    win = false;
+                }
+            }
+            if (win) {
+                return true;
+            }
+        }
+       
+        // 斜向
+        // 斜向 0,2; 1,1; 2,0 位置都与当前 color 相同时
+        {
+            let win = true;
+            for (let j=0; j<3; j++) {
+                if (pattern[j][2-j] !== color) {
+                    win = false;
+                }
+            }
+            if (win) {
+                return true;
+            }
+        }    
+    }
+    
+    show(pattern);
+</script>
+</html>
